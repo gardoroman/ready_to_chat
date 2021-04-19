@@ -20,6 +20,11 @@ defmodule ReadyToChatWeb.Router do
     live "/", PageLive, :index
   end
 
+  scope "/room" do
+    live "/new", Room.NewLive, :new
+    live "/slug", Room.ShowLive, :show
+  end
+
   # Other scopes may use custom stacks.
   # scope "/api", ReadyToChatWeb do
   #   pipe_through :api
