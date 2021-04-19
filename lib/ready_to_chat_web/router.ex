@@ -17,13 +17,14 @@ defmodule ReadyToChatWeb.Router do
   scope "/", ReadyToChatWeb do
     pipe_through :browser
 
-    live "/", PageLive, :index
+    get "/", PageController, :index
+
+    scope "/room", as: :room do
+      live "/new", Room.NewLive, :new
+      live "/:slug", Room.ShowLive, :show
+    end
   end
 
-  scope "/room" do
-    live "/new", Room.NewLive, :new
-    live "/slug", Room.ShowLive, :show
-  end
 
   # Other scopes may use custom stacks.
   # scope "/api", ReadyToChatWeb do
