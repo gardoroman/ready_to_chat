@@ -13,6 +13,9 @@ defmodule ReadyToChat.Application do
       ReadyToChatWeb.Telemetry,
       # Start the PubSub system
       {Phoenix.PubSub, name: ReadyToChat.PubSub},
+      #Start the Presence module
+      #Note: must be setup before Endpoint
+      ReadyToChatWeb.Presence,
       # Start the Endpoint (http/https)
       ReadyToChatWeb.Endpoint
       # Start a worker by calling: ReadyToChat.Worker.start_link(arg)
