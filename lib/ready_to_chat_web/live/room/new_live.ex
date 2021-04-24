@@ -41,7 +41,7 @@ defmodule ReadyToChatWeb.Room.NewLive do
   #------------------------------------------------------------------------
   @impl true
   def handle_event("validate", %{"room" => room_params}, socket) do
-    {:ok,
+    {:noreply,
       socket
       |> put_changeset(room_params)
     }
