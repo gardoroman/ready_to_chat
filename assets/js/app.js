@@ -22,6 +22,10 @@ let csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("
 
 let localStream = null;
 
+const users = {};
+
+const logErrors = err => console.log(err);
+
 // Assigns local media to the const variable stream
 async function initStream(){
   try {
@@ -30,16 +34,102 @@ async function initStream(){
     localStream = stream;
     document.getElementById('local-video').srcObject = stream;
   } catch(e){
-    console.log(e);
+    logErrors(e);
   }
 }
 
+function addUserConnection(userUuid){
+  if (users[userUuid] === undefined){
+    users[userUuid] = {
+      peerConnection: null
+    }
+  }
+
+  return users;
+}
+
+function removeUserConnection(userUuid){
+  delete users[userUuid];
+  
+  return users;
+}
+
+/**
+ * 
+ * @param {*} lv: the `this` object from the LiveView hook
+ * @param {*} fromUser: the user with which to create the connection
+ * @param {*} offer: stores the SDP offer
+ */
+function createPeerConnection(lv, fromUser, offer){
+
+  let newPeerConnection = new RTCPeerConnection({
+    iceServers: [
+      {urls: "stun:littlechat.app:3478"}
+    ]
+  })
+
+  // add new connection to users object.
+  users[fromUser].peerConnection = newPeerConnection;
+
+  // adds local tracks, ie video/audio, to the RTCPeerConnection
+  localStream.getTracks().forEach(track => newPeerConnection.addTrack(track, localStream));
+
+  if (offer !== undefined){
+    newPeerConnection.setRemoteDescription({type: "offer", sdp: offer});
+    newPeerConnection.createAnswer()
+      .then( answer => {
+        newPeerConnection.setLocalDescription(answer);
+        console.log("Sending Answer to requester", answer);
+        lv.pushEvent("new_answer", {toUser: fromUser, description: answer});
+      })
+      .catch(logErrors)
+    }
+
+  newPeerConnection.onicecandidate = async candidate => {
+    lv.pushEvent("new_ice_candidate", {toUser: fromUser, candidate});
+  }
+
+  if (offer === undefined){
+    newPeerConnection.onnegotiationneeded = async () => {
+      try {
+        newPeerConnection.createOffer()
+          .then(offer => {
+            newPeerConnection.setLocalDescription(offer);
+            console.log("Sending the following Offer to Requester:", offer);
+            lv.pushEvent("new_sdp_offer", {toUser: fromUser, description: offer});
+          })
+      } catch(e) {
+        logErrors(e)
+      }
+    }
+  }
+
+  newPeerConnection.ontrack = async event => {
+    console.log("Track Received", event)
+    document.getElementById(`video-remote-${fromUser}`).srcObject = event.streams[0];
+  }
+
+  return newPeerConnection;
+  
+}
+
 let Hooks = {};
+
 Hooks.JoinCall = {
   mounted(){
     initStream();
   }
 };
+Hooks.InitUser = {
+  mounted(){
+    addUserConnection(this.el.data.userUuid);
+  },
+  destroyed(){
+    removeUserConnection(this.el.data.userUuid);
+  }
+}
+
+
 
 let liveSocket = new LiveSocket("/live", Socket, {hooks: Hooks, params: {_csrf_token: csrfToken}});
 
