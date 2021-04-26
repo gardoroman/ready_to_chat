@@ -82,7 +82,7 @@ function createPeerConnection(lv, fromUser, offer){
         console.log("Sending Answer to requester", answer);
         lv.pushEvent("new_answer", {toUser: fromUser, description: answer});
       })
-      .catch(logErrors)
+      .catch(logErrors);
     }
 
   newPeerConnection.onicecandidate = async candidate => {
@@ -97,7 +97,7 @@ function createPeerConnection(lv, fromUser, offer){
             newPeerConnection.setLocalDescription(offer);
             console.log("Sending the following Offer to Requester:", offer);
             lv.pushEvent("new_sdp_offer", {toUser: fromUser, description: offer});
-          })
+          });
       } catch(e) {
         logErrors(e)
       }
@@ -105,7 +105,7 @@ function createPeerConnection(lv, fromUser, offer){
   }
 
   newPeerConnection.ontrack = async event => {
-    console.log("Track Received", event)
+    console.log("Track Received", event);
     document.getElementById(`video-remote-${fromUser}`).srcObject = event.streams[0];
   }
 
@@ -122,10 +122,10 @@ Hooks.JoinCall = {
 };
 Hooks.InitUser = {
   mounted(){
-    addUserConnection(this.el.data.userUuid);
+    addUserConnection(this.el.dataset.userUuid);
   },
   destroyed(){
-    removeUserConnection(this.el.data.userUuid);
+    removeUserConnection(this.el.dataset.userUuid);
   }
 }
 
@@ -139,11 +139,11 @@ window.addEventListener("phx:page-loading-stop", () => NProgress.done());
 
 
 // connect if there are any LiveViews on the page
-liveSocket.connect()
+liveSocket.connect();
 
 // expose liveSocket on window for web console debug logs and latency simulation:
 // liveSocket.enableDebug()
 // liveSocket.enableLatencySim(1000)  // enabled for duration of browser session
 // liveSocket.disableLatencySim()
-window.liveSocket = liveSocket
+window.liveSocket = liveSocket;
 
